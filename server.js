@@ -78,6 +78,41 @@ app.get("/", (req, res) => {
 //   });
 // });
 
+// Sign-up: triggers Supabase to send a confirmation email
+app.post("/auth/signup", async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const { data, error } = await supabase.auth.signUp(
+      { email, password }
+      // { redirectTo: `${process.env.FRONTEND_URL}/auth/callback` }
+    );
+    if (error) return res.status(400).json({ error: error.message });
+    return res.json({
+      message: "Confirmation email sent. Please check your inbox.",
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Unexpected error" });
+  }
+});
+
+// Login: returns a JWT session if the email has been confirmed
+app.post("/auth/login", async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) return res.status(401).json({ error: error.message });
+    // `data.session` contains access_token, refresh_token, user, etc.
+    return res.json({ session: data.session, user: data.user });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Unexpected error" });
+  }
+});
+
 // GET endpoint to fetch all opportunities
 app.get("/opportunities", async (req, res) => {
   try {
